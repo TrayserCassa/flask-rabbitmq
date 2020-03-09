@@ -1,7 +1,5 @@
 # encoding:utf-8
 from . import ExchangeType
-from .util import logger
-import uuid
 import time
 import threading
 import json
@@ -156,14 +154,14 @@ class RabbitMQ(object):
         end = time.time() + timeout
         while time.time() < end:
             if self.data[corr_id]['isAccept']:  # 判断是否接收到服务端返回的消息
-                logger.info("Got the RPC server response => {}".format(self.data[corr_id]['result']))
+                self.app.logger.info("Got the RPC server response => {}".format(self.data[corr_id]['result']))
                 return self.data[corr_id]['result']
             else:
                 self._connection.process_data_events()
                 time.sleep(0.3)
                 continue
         # 超时处理
-        logger.error("Get the response timeout.")
+        self.app.logger.error("Get the response timeout.")
         return None
 
     def send_json_sync(self, body, key=None):
@@ -187,7 +185,7 @@ class RabbitMQ(object):
         All RPC response will call this method, so change the isAccept to True in this method
         所有的RPC请求回调都会调用该方法，在该方法内修改对应corr_id已经接受消息的isAccept值和返回结果
         """
-        logger.info("on response => {}".format(body))
+        self.app.logger.info("on response => {}".format(body))
 
         corr_id = props.correlation_id  # 从props得到服务端返回的客户端传入的corr_id值
         self.accept(corr_id, body)
@@ -220,7 +218,7 @@ class RabbitMQ(object):
                 # Consume the queue
                 self.basic_consuming(queue_name, callback)
 
-        logger.info(" * The flask RabbitMQ application is consuming")
+        self.app.logger.info(" * The flask RabbitMQ application is consuming")
         t = threading.Thread(target=self.consuming)
         t.start()
 
